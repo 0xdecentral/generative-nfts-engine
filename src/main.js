@@ -279,9 +279,58 @@ const isDnaUnique = (_DnaList = new Set(), _dna = "") => {
   return !_DnaList.has(_filteredDNA);
 };
 
+const invalidLayers = [
+  {
+    // 'Bang hair' reversed id
+    id: 2,
+    name: "Behind hair",
+    elements: [
+      "3 colors short hair",
+      "blonde medium short bang hair",
+      "left side tail short red bang hair",
+      "pink ponytail straight bang hair",
+      "platinum blonde short hair",
+    ],
+  },
+  {
+    // 'Outfit top' reversed id
+    id: 6,
+    name: "Outfit bottom",
+    elements: ["Deep decolte dress white", "Nurse purple"],
+  },
+];
+
+// ex. return value:  '5:Stars background.png-4:pink ponytail straight bang hair.png-3:none#0.png-1:miku tattoo body accessories.png'
+// format: {id}:{file_name}-{id}:{file_name}-...
 const createDna = (_layers) => {
   let randNum = [];
-  _layers.forEach((layer) => {
+  const layers = [..._layers];
+
+  layers.reverse().forEach((layer) => {
+    for (let i = 0; i < invalidLayers.length; i++) {
+      const invalidLayer = invalidLayers[i];
+
+      if (layer.name === invalidLayer.name) {
+        const elements = invalidLayer.elements;
+
+        for (let j = 0; j < elements.length; j++) {
+          if (randNum[invalidLayer.id].indexOf(elements[j]) !== -1) {
+            // if the randNum has got the short hair(Bang hair) previously, we should set the 'none.png' for 'Behind hair' property.
+            // or if it already has the full outfit(Outfit Top) property, we should set the 'none.png' for 'Outfit bottom' property.
+            const noneHair = layer.elements.find(
+              (element) => element.name === "none"
+            );
+
+            return randNum.push(
+              `${noneHair.id}:${noneHair.filename}${
+                layer.bypassDNA ? "?bypassDNA=true" : ""
+              }`
+            );
+          }
+        }
+      }
+    }
+
     var totalWeight = 0;
     layer.elements.forEach((element) => {
       totalWeight += element.weight;
@@ -300,7 +349,8 @@ const createDna = (_layers) => {
       }
     }
   });
-  return randNum.join(DNA_DELIMITER);
+
+  return randNum.reverse().join(DNA_DELIMITER);
 };
 
 const writeMetaData = (_data) => {
